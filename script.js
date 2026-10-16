@@ -11,6 +11,9 @@ function multiply(a, b) {
 }
 
 function divide (a, b) {
+    if (b === 0){
+        return "error"
+    }
     return a / b;
 }
 
@@ -69,12 +72,28 @@ operatorButtons.forEach(function (button) {
 
 const equalsButton = document.querySelector("#equals");
 
-equalsButton.addEventListener("click", function () {
-    const secondNumber = Number(display.textContent);
 
+equalsButton.addEventListener("click", function () {
+    if (
+        firstNumber === null ||
+        operator === null ||
+        waitingForSecondNumber
+    ) {
+        return;
+    }
+
+    const secondNumber = Number(display.textContent);
     const result = operate(operator, firstNumber, secondNumber);
 
-    display.textContent = result;
+    if (result === "error" || !Number.isFinite(result)) {
+        display.textContent = "Error";
+    } else {
+        display.textContent = String(Number(result.toFixed(2)));
+    }
+
+    firstNumber = null;
+    operator = null;
+    waitingForSecondNumber = false;
     resultDisplayed = true;
 });
 
@@ -94,6 +113,34 @@ numberButtons.forEach(function (button) {
     });
 });
 
+const decimalButton = document.querySelector("#decimal");
+
+decimalButton.addEventListener("click", function () {
+    if (waitingForSecondNumber || resultDisplayed) {
+        display.textContent = "0.";
+        waitingForSecondNumber = false;
+        resultDisplayed = false;
+    } else if (!display.textContent.includes(".")) {
+
+        display.textContent += ".";
+    }
+});
+
+const backspaceButton = document.querySelector("#backspace");
+
+backspaceButton.addEventListener("click", function (){
+    if (waitingForSecondNumber || resultDisplayed) {
+        return;
+    }
+
+    if (display.textContent.length > 1) {
+        display.textContent = display.textContent.slice(0, -1);
+
+    } else {
+        display.textContent = 0;
+    }
+});
+
 const clearButton = document.querySelector("#clear");
 
 clearButton.addEventListener("click", function () {
@@ -102,4 +149,30 @@ clearButton.addEventListener("click", function () {
     operator = null;
     resultDisplayed = false;
     waitingForSecondNumber = false;
+});
+
+
+document.addEventListener("keydown", function (event) {
+    const key = event.key;
+    if (/^[0-9]$/.test(key)) {
+        const digitButton = [...numberButtons].find(
+            button => button.textContent === key
+        );
+        digitButton?.click();
+    } else if (["+", "-", "*", "/"].includes(key)) {
+        const symbols = { "+": "+", "-": "−", "*": "×", "/": "÷" };
+        const operatorButton = [...operatorButtons].find(
+            button => button.textContent === symbols[key]
+        );
+        operatorButton?.click();
+    } else if (key === "Enter" || key === "=") {
+        event.preventDefault();
+        equalsButton.click();
+    } else if (key === "Backspace") {
+        backspaceButton.click();
+    } else if (key === "Escape") {
+        clearButton.click();
+    } else if (key === ".") {
+        decimalButton.click();
+    }
 });
